@@ -1,58 +1,44 @@
+#include <sys/wait.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <stdio.h>
-
 #define PREFIX "Sully_"
 #define COUNT 5
-
-int get_size(int n, int count) {
-  if (n == 0 && count > 1)
-    return count;
-  return get_size(n % 10, count++);
+#define S "#include <sys/wait.h>%c#include <stdlib.h>%c#include <string.h>%c#include <unistd.h>%c#include <stdio.h>%c#define PREFIX %cSully_%c%c#define COUNT %d%c#define S %c%s%c%cchar *name_make(){int size=(COUNT / 10) + 1;char *buff = malloc(sizeof(char) * (9 + size));if (buff == 0) return 0;sprintf(buff, %c%cs%cd.c%c, PREFIX, COUNT);return buff;}%cvoid shift_right(char *str, int offset){int n = strlen(str);int last = n - 1;for (int k=0; k< n - offset; k++) str[last - k] = str[last - (k + offset)];}%cint main(){char *name = name_make();if (name == 0) return 1;FILE *fo= fopen(name, %cw%c);shift_right(name, 2);name[0] = '.';name[1] = '/';fprintf(fo, S, 10, 10, 10, 10, 10, 34, 34, 10, 10, 34, S, 34, 10, 34, 37, 37, 34, 10, 10, 34, 34, 10);fclose(fo);}%c"
+char *name_make(){
+int size=(COUNT / 10) + 1;
+char *buff = malloc(sizeof(char) * (9 + size));
+if (buff == 0) return 0;
+sprintf(buff, "%s%d.c", PREFIX, COUNT);
+return buff;
 }
-
-char *name_make(int n) {
-
-  int size;
-
-  if (n == 0) size = 1;
-  else size = get_size(n, 0);
-
-  char *buff = malloc(sizeof(char) * (9 + size));
-  if (buff == 0)
-    return 0;
-
-  sprintf(buff, "%s%d.c", PREFIX, n);
-  return buff;
+void shift_right(char *str, int offset){
+int n = strlen(str);
+int last = n - 1;
+for (int k=0; k < n - offset; k++)
+str[last - k] = str[last - (k + offset)];
 }
-
-int get_index(char *file_name) {
-  char *ptr=strchr(file_name, '_');
-  if (ptr == 0 || *(ptr + 1) == 0)
-    return COUNT;
-  return atoi(ptr + 1);
-}
-
-int main(int argc, char *argv[]) {
-  if (argc != 1)
-    return 1;
-
-  int index = get_index(argv[0]);
-  if (index == -1)
-    return 1;
-
-  char *name = name_make(index);
-  if (name == 0)
-    return 1;
-  printf("here!\n");
-
+int main(){
+  if (COUNT<=0)return 0;
+  char *name = name_make();
+  if (name == 0) return 1;
+  char *dup = strdup(name);
   FILE *fo= fopen(name, "w");
-  name = memmove(name + 2, name, strlen(name - 2));
+  shift_right(name, 2);
   name[0] = '.';
   name[1] = '/';
-
+  fprintf(fo, S, 10, 10, 10, 10, 10, 34, 34, 10, COUNT - 1, 10, 34, S, 34, 10, 34, 37, 37, 34, 10, 10, 34, 34, 10);
+  fclose(fo);
+  printf("%s\n", dup);
   printf("%s\n", name);
-  // char *a[]={"gcc", "-o", name, "&&", name, NULL};
-  // execvp("gcc", a);
+  int pid = fork();
+  if (pid == 0){
+    char *a[]={"gcc", dup, "-o", name, NULL};
+    if (execvp(a[0], a)) exit(0);
+  } else {
+    wait(NULL);
+    char *a[]={name};
+    if (execvp(a[0], a)) exit(0);
+  }
 }
