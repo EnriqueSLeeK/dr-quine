@@ -7,7 +7,8 @@ SRC1 := ./C/Colleen.c
 SRC2 := ./C/Grace.c
 SRC3 := ./C/Sully.c
 
-SRC1-a := ./ASM/Collen.asm
+SRC1-a := ./ASM/Colleen.asm
+SRC2-a := ./ASM/Grace.asm
 
 
 Colleen-C: $(SRC1)
@@ -20,8 +21,12 @@ Sully-C: $(SRC3)
 
 Colleen-A: $(SRC1-a)
 	nasm -f elf64 $(SRC1-a)
-	gcc -m64 -no-pie -o $(NAME1) $(NAME1).o
-	rm $(NAME1).o
+	gcc -m64 -no-pie -o $(NAME1) ./ASM/$(NAME1).o
+	rm ./ASM/Colleen.o
+Grace-A: $(SRC2-a)
+	nasm -f elf64 $(SRC2-a)
+	gcc -m64 -no-pie -o $(NAME2) ./ASM/$(NAME2).o
+	rm ./ASM/Grace.o
 
 clean:
 	rm -f $(NAME1)
